@@ -1,0 +1,3 @@
+# Using pip through conda env on Python 3.14.2
+numpy
+sounddevice  # More up-to-date than PyAudio, works on 3.14
