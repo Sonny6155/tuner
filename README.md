@@ -3,16 +3,21 @@
 A graphical precision tuner and general-purpose pitch tracker.
 
 ## Features
-- Real-time detection and CLI plotting
-- Tuning mode (accepts Hz or pitch name)
-- Advanced controls for tuning default rolling buffer and its read block sizes, input bandpass/range, and CLI display
+- Real-time, TUI pitch plotting.
+- Tuning mode for ease of use.
+- Advanced controls for power users:
+    - Input bandpass and displayed range.
+    - Estimator buffer and block stream sizing.
+    - Algorithm selection (WIP, limited to YIN variants).
 
 ## Quick Start
 ### Requirements
-Requires pip specifically for `sounddevice`. Also highly recommend using miniconda or equivalent to manage your Python environment. Check `requirements.txt` for additional notes.
+Recommended to install via pip, using miniconda (or similar) to isolate your Python environment. Check `requirements.txt` for additional replication notes.
 ```bash
 pip install -r requirements.txt
 ```
+
+*Conda historically had issues with PortAudio and Python versioning. If that's resolved, feel free to use that instead, but note the different package name.*
 
 ### Examples
 General-purpose pitch tracking:
@@ -20,7 +25,7 @@ General-purpose pitch tracking:
 python tuner.py
 ```
 
-Fine-tune a single note (accepts Hz or SPN):
+Fine-tune a single note (to +/-1 semitone, accepts Hz or SPN):
 ```bash
 python tuner.py -f 440
 python tuner.py -f A4
@@ -39,6 +44,7 @@ python tuner.py -h
 python tuner.py --list-tips
 ```
 
+*Tested for MacOS. Should work fine on Linux and Windows, but check the `sounddevice` docs for additional components. Linux may require system package `portaudio` (or`libportaudio2` on Ubuntu), while Windows may want some code tweaks to use ASIO for sub-10ms latencies.*
 *You may need to enable microphone permissions for your terminal, especially on MacOS.*
 
 ## Technical Details
@@ -46,8 +52,7 @@ python tuner.py --list-tips
 - YIN: Autocorrelation-based, F0 detector. One of the simpler options, but fast (with FFT) and effective.
     - Well-suited for tuning in low-noise environments on sustained notes.
     - May underperform for instruments with particularly loud overtones and for overly non-stationary signals. Functional for vocals, but very poor for regular speech.
-    - Low latency of ~100ms on default 4096 buffer size. Increasing to 8192 may slightly improve stability and low frequency range.
-    - Assumes the real-time buffer input is its own window W, thus autocorrelating on its entire self. Should remain accurate and roughly sub-ms compute for all reasonable buffer sizes.
+    - Works well on default 4096 buffer size (~100 ms latency). Increasing to 8192 may slightly improve stability and low frequency range.
     - Other variants included are experimental. For best performance, go with the default tapered YIN.
 
 ### Limitations
@@ -56,9 +61,9 @@ python tuner.py --list-tips
 
 ### Project Layout
 ```text
+README.md
 demo/                # Experiments, comparisons, etc.
 pitch_estimators.py  # Pitch algorithms.
-README.md
 render.py            # Helpers for curses and braille drawing.
 requirements.txt
 tuner.py             # Entry point. Handles args and init.
@@ -71,13 +76,12 @@ After some initial success, more features were added to make it both more of a g
 
 It turned out that the prototype was already good enough to outperform the web tuner I was previously using in precision and stability. With some adjustments to the algorithm and its parameters, it became relatively robust to overdrive/distortion and light noise, which meant I could tune without resetting all my amp settings everytime. It was also stable enough for use with generic instruments and vocals outside of a tuning context. However, the raw outputs were sometimes still too noisy for the original HIGH/LOW + cent deviation readings. A point-in-time reading was also too hard to use for non-stationary signals (and guitar strings jump/drift a lot within the first 3s of a pluck). By implementing a graphical pitch-over-time display, I could visualize and characterize pitch movement purely by eye, pick a suitable tuning, then simply adjust down to a sub-cent precision. Further args were later added to assist visual precision and further mitigate misclassification of overtones common to some instruments.
 
-Additionally, this project is as much as a personal research project as it is to solve a practical problem. F0 pitch detection seems to be a rather deep rabbithole well-worth exploring, so I plan to tinker more and manually re-implement more algorithms at some point. Some may improve performance on select instruments, but most will exist for comparison's sake.
+In addition to all of above, this project also doubles as a personal research side-project. F0 pitch detection seems to be a rather deep rabbithole. I would like to use this repo as a testing ground to tinker with re-implement more algorithms by hand (at some point). While some may improve performance on select instruments, most will exist for comparison's sake.
 
 ## Future Work
 Only if I get around to it.
 
-- Simple smoothing filters should help denoise tracking outputs massively. This should help a ton with YIN, whose outputs get sporadic in low signal-to-noise environments.
-- Voiced flags could also help ditto, but is low priority and seems algorithm-dependent.
+- Simple smoothing filters and generic (if not algorithm-specific) voicing flags should help denoise tracking outputs. This should help a ton with YIN, whose outputs get sporadic in low signal-to-noise environments.
 - The UX still sucks. CLI init args are cumbersome. The two most viable options here are direct TUI pitch input, or simpler CLI aliases (e.g. guitar strings 1-6). The framework for either already exist.
 - The helper info text is a bit bloated. This really needs to be split up into some sort of `--list <subject>` option...
 - I would like to explore other real-time algorithms, or at least hack one into real-time use. Issue is, every single one is a pain to implement. Or require some bloated library written in C/Rust then ported to Python. Or are NN-based.
