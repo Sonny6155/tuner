@@ -45,7 +45,6 @@ python tuner.py --list-tips
 ```
 
 *Tested for MacOS. Should work fine on Linux and Windows, but check the `sounddevice` docs for additional components. Linux may require system package `portaudio` (or`libportaudio2` on Ubuntu), while Windows may want some code tweaks to use ASIO for sub-10ms latencies.*
-*You may need to enable microphone permissions for your terminal, especially on MacOS.*
 
 ## Technical Details
 ### Current Algorithms
